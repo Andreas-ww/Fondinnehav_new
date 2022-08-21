@@ -5,10 +5,9 @@ import urllib.request as urllib2
 import urllib
 import zipfile
 
-path=r'C:\Users\awestroth\Privat\Fondinnehav_github\download_files_new'
+path=r'C:\Users\awestroth\Privat\Fondinnehav_new\download_files_new
 
-
-os.chdir(r'C:\Users\awestroth\Privat\Fondinnehav_github\download_files_new')
+os.chdir(r'C:\Users\awestroth\Privat\Fondinnehav_new\download_files_new')
 response = urllib2.urlopen("https://www.fi.se/sv/vara-register/fondinnehav-per-kvartal/")
 print(response.info())
 html = response.read()

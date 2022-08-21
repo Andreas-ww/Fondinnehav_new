@@ -1,7 +1,6 @@
 
 
 def read_quarters(quarter, engine):
-    print("Hellos")
     #Import dependencies
     import csv
     import requests
@@ -19,50 +18,31 @@ def read_quarters(quarter, engine):
     fondbolag = os.listdir(quarter)
     fondbolag_path = [quarter + "/" + x for x in fondbolag]  # Path till alla fondbolag i kvartalet
     
-    
-
-
 
     
     #Funktion för att gå igenom ett fondbolag 
     #fondbolaget_path = fondbolag_path[0]
     for fondbolaget_path in tqdm(fondbolag_path):
-    
-        
+        #Alla fonder i fondbolaget
         fond = os.listdir(fondbolaget_path)
         fond_path = [fondbolaget_path+ "/" + x for x in fond] 
         
         #Funktion för att gå igenom en fond 
         #fonden_path = fond_path[2]
-        #
-        
-        
-        # instrument_df = pd.DataFrame()
-        # full_instrument_df = pd.DataFrame()
-        # instrument_rows = []
-    
-            
-            
+
         for fonden_path in fond_path:
                     
             innehav_df = pd.DataFrame()
-            full_innehav_df = pd.DataFrame()
             innehav_rows = []
             mega_df = pd.DataFrame()
     
-            
-           
+            #Parse fonden
             xmlparse = ET.parse(fonden_path)
             root = xmlparse.getroot()  
             
-            
-            
-            
-    
-            
+            #Fondinformation -> Innehav
             fond_i = root.find(prefix+"Fondinformation")
             
-          
             try:
                 #Finansiella instrument nivås
                 finans_intstrument_i = fond_i.find(prefix+"FinansiellaInstrument")
@@ -79,6 +59,15 @@ def read_quarters(quarter, engine):
                     Landkod_Emittent = instrument.find(prefix+"Landkod_Emittent").text if instrument.find(prefix+"Landkod_Emittent").text != None else "Saknad"
                     Valuta = instrument.find(prefix+"Valuta").text if instrument.find(prefix+"Valuta").text != None else "Saknad"
                     
+                    #Innehav / Ownership                
+                    antal = instrument.find(prefix+"Antal").text if instrument.find(prefix+"Antal").text != None else "Saknad"
+                    kurs = instrument.find(prefix+"Kurs_som_använts_vid_värdering_av_instrumentet").text if instrument.find(prefix+"Kurs_som_använts_vid_värdering_av_instrumentet").text != None else "Saknad"
+                    valutakurs = instrument.find(prefix+"Valutakurs_instrument").text  if instrument.find(prefix+"Valutakurs_instrument").text != None else "Saknad"
+                    marknads_v = instrument.find(prefix+"Marknadsvärde_instrument").text  if instrument.find(prefix+"Marknadsvärde_instrument").text != None else "Saknad"
+                    andel_av_fond = instrument.find(prefix+"Andel_av_fondförmögenhet_instrument").text  if instrument.find(prefix+"Andel_av_fondförmögenhet_instrument").text != None else "Saknad"
+                    
+                    
+                    
                     try:
                         bransch = instrument.find(prefix+"Bransch")
                         branschkod_instrument = bransch.find(prefix+"Branschkod_instrument").text
@@ -88,25 +77,8 @@ def read_quarters(quarter, engine):
                         branschkod_instrument = 'Saknad'
                         bransch_namn = 'Saknad'
                         
-                
-                    
-                    # instrument_rows.append({"Tillgångsslag_enligt_LVF_5_kap": Tillgangsslag_enligt_LVF_5_kap,
-                    # 				"Instrumentnamn": Instrumentnamn,
-                    # 				"ISIN_kod_instrument": ISIN_kod_instrument,
-                    #           "Landkod_Emittent": Landkod_Emittent,
-                    #           "Valuta": Valuta,
-                    #             "Bransch": bransch_namn,
-                    #             "Branschkod": branschkod_instrument,
-                    #             "unik_instrumend_id": Instrumentnamn + ISIN_kod_instrument + Landkod_Emittent 
-                    #             })
-                    
-                    #Innehav / Ownership                
-                    antal = instrument.find(prefix+"Antal").text if instrument.find(prefix+"Antal").text != None else "Saknad"
-                    kurs = instrument.find(prefix+"Kurs_som_använts_vid_värdering_av_instrumentet").text if instrument.find(prefix+"Kurs_som_använts_vid_värdering_av_instrumentet").text != None else "Saknad"
-                    valutakurs = instrument.find(prefix+"Valutakurs_instrument").text  if instrument.find(prefix+"Valutakurs_instrument").text != None else "Saknad"
-                    marknads_v = instrument.find(prefix+"Marknadsvärde_instrument").text  if instrument.find(prefix+"Marknadsvärde_instrument").text != None else "Saknad"
-                    andel_av_fond = instrument.find(prefix+"Andel_av_fondförmögenhet_instrument").text  if instrument.find(prefix+"Andel_av_fondförmögenhet_instrument").text != None else "Saknad"
-                    
+
+
                     innehav_rows.append({"Tillgångsslag_enligt_LVF_5_kap": Tillgangsslag_enligt_LVF_5_kap,
                     				    "Instrumentnamn": Instrumentnamn,
                         				"ISIN_kod_instrument": ISIN_kod_instrument,
@@ -115,7 +87,7 @@ def read_quarters(quarter, engine):
                                         "Bransch": bransch_namn,
                                         "Branschkod": branschkod_instrument,
                                         "Antal":antal,
-                                         "Kurs": kurs,
+                                         "Instrument_Kurs": kurs,
                                          "Valutakurs": valutakurs,
                                          "Marknadsvärde": marknads_v,
                                          "Andel av fond": andel_av_fond,
@@ -123,22 +95,11 @@ def read_quarters(quarter, engine):
                                          })
                     
                     
-                    
-                    
-                    
                 innehav_df = pd.DataFrame(innehav_rows)
-                
-                #mega_df.append(innehav_df)
-            
-            
-             
+                      
             except:
                 print("inga instrument i " + fond_i.find(prefix+"Fond_namn").text)
-            
-            
-            
-            
-            
+
             
             #
             #Till alla i fonden
@@ -146,8 +107,6 @@ def read_quarters(quarter, engine):
             #Måste lägga till fler info 
             
             full_fond_df = pd.DataFrame()
-            #LEI to join 
-            fond_cols = ["Fond_institutnummer", "Fond_ISIN", "Fond_namn","Fondbolag_LEI_kod", "Fond_status"]
             fond_rows = []
             
             
@@ -156,7 +115,12 @@ def read_quarters(quarter, engine):
             Fond_institutnummer = fond_i.find(prefix+"Fond_institutnummer").text if fond_i.find(prefix+"Fond_institutnummer").text != None else "Saknad"
             Fond_ISIN = fond_i.find(prefix+"Fond_ISIN-kod").text if fond_i.find(prefix+"Fond_ISIN-kod").text != None else "Saknad"
             Fond_namn = fond_i.find(prefix+"Fond_namn").text  if fond_i.find(prefix+"Fond_namn").text  != None else "Saknad"
-            
+            Fond_frmg = fond_i.find(prefix+"Fondförmögenhet").text  if fond_i.find(prefix+"Fondförmögenhet")  != None else "Saknad"
+            Fond_likvid = fond_i.find(prefix+"Likvida_medel").text  if fond_i.find(prefix+"Likvida_medel")  != None else "Saknad"
+            Fond_ovrgt = fond_i.find(prefix+"Övriga_tillgångar_och_skulder").text  if fond_i.find(prefix+"Övriga_tillgångar_och_skulder")  != None else "Saknad"
+            Fond_risk = fond_i.find(prefix+"Aktiv_risk").text  if fond_i.find(prefix+"Aktiv_risk") != None else "Saknad"
+            Fond_std = fond_i.find(prefix+"Standardavvikelse_24_månader").text  if fond_i.find(prefix+"Standardavvikelse_24_månader")  != None else "Saknad"
+
             try:
                 Fond_status = fond_i.find(prefix+"Fond_status").text
             
@@ -164,6 +128,11 @@ def read_quarters(quarter, engine):
                 				"Fond_ISIN": Fond_ISIN,
                 				"Fond_namn": Fond_namn,
                          "Fond_status": Fond_status,
+                         "Fond_förmögenhet": Fond_frmg,
+                         "Fond_Likvida_medel": Fond_likvid,
+                         "Fond_Övriga_tillgångar_skulder":Fond_ovrgt,
+                         "Fond_Aktiv_risk": Fond_risk,
+                         "Fond_standardavvikelse_24m": Fond_std,
                          "unik_fond_id": Fond_namn + Fond_ISIN + Fond_institutnummer
                          }
                          )
@@ -172,6 +141,11 @@ def read_quarters(quarter, engine):
                 				"Fond_ISIN": Fond_ISIN,
                 				"Fond_namn": Fond_namn,
                          "Fond_status": "Aktiv",
+                         "Fond_förmögenhet": Fond_frmg,
+                         "Fond_Likvida_medel": Fond_likvid,
+                         "Fond_Övriga_tillgångar_skulder":Fond_ovrgt,
+                         "Fond_Aktiv_risk": Fond_risk,
+                         "Fond_standardavvikelse_24m": Fond_std,
                          "unik_fond_id": Fond_namn + Fond_ISIN + Fond_institutnummer}
                          )
                 
@@ -181,11 +155,8 @@ def read_quarters(quarter, engine):
             
             full_fond_df = full_fond_df.append(fond_df) 
             
-            #
-            
-            #
+
             #Till alla i bolaget 
-            full_bolag_df = pd.DataFrame()
             bolag_cols = ["Fondbolag_namn", "Fondbolag_institutnummer", "Fondbolag_LEI_kod"]
             bolag_rows = []
             
@@ -209,9 +180,7 @@ def read_quarters(quarter, engine):
             rapport_i = root.find(prefix+"Rapportinformation")    
             #Date for registration
             kvartalsslut=rapport_i.find(prefix + "Kvartalsslut").text  if rapport_i.find(prefix + "Kvartalsslut").text != None else "Saknad"
-            
-            kvartallslut_df = pd.DataFrame()
-            
+                        
             #
             mega_df = mega_df.append(innehav_df)
             
@@ -222,7 +191,7 @@ def read_quarters(quarter, engine):
             kv = {'Kvartalsslut':[kvartalsslut]}
             mega_df = mega_df.merge(pd.DataFrame(kv), how='cross')
             
-            mega_df.to_csv("C:/Users/awestroth/Privat/Fondinnehav_github/Test_ou_tables/"  + Fondbolag_namn + re.sub(r'[^a-zA-Z]', '', Fond_namn) + ".csv", encoding='utf-8')
+            mega_df.to_csv("C:/Users/awestroth/Privat/Fondinnehav_new/Test_ou_tables"  + Fondbolag_namn + re.sub(r'[^a-zA-Z]', '', Fond_namn) + ".csv", encoding='utf-8')
 
             mega_df.to_sql("Stage_Fondinnehav",engine, if_exists="append", index=False)
 
